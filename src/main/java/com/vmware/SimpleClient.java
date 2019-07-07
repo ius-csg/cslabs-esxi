@@ -222,6 +222,7 @@ public class SimpleClient extends ConnectedVimServiceBase
 
     public String main() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg
     {
+        connection.connect();
         propCollectorRef = serviceContent.getPropertyCollector();
         return getAndPrintInventoryContents();
     }

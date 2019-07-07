@@ -39,6 +39,7 @@ public class BasicConnection implements Connection
     private VimPortType vimPort;
     private ServiceContent serviceContent;
     private UserSession userSession;
+    private Date lastLoginTime;
     private ManagedObjectReference svcInstRef;
 
     private URL url;
@@ -138,19 +139,14 @@ public class BasicConnection implements Connection
     {
         vimService = new VimService();
         vimPort = vimService.getVimPort();
-        Map<String, Object> ctxt =
-                ((BindingProvider) vimPort).getRequestContext();
-
+        Map<String, Object> ctxt = ((BindingProvider) vimPort).getRequestContext();
+        System.out.println("Connecting to esxi server");
         ctxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url.toString());
         ctxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
+        ManagedObjectReference serviceInstanceReference = this.getServiceInstanceReference();
+        serviceContent = vimPort.retrieveServiceContent(serviceInstanceReference);
 
-        serviceContent = vimPort.retrieveServiceContent(this.getServiceInstanceReference());
-
-        userSession = vimPort.login(
-                serviceContent.getSessionManager(),
-                username,
-                password,
-                null);
+        userSession = vimPort.login(serviceContent.getSessionManager(), username, password, null);
 
         headers =
                 (Map) ((BindingProvider) vimPort).getResponseContext().get(
@@ -161,10 +157,14 @@ public class BasicConnection implements Connection
         if (userSession == null) {
             return false;
         }
-        long startTime = userSession.getLastActiveTime().toGregorianCalendar().getTime().getTime();
+        Date startTime = userSession.getLastActiveTime().toGregorianCalendar().getTime();
+        Date now = new Date();
+        long thirtyMinutesMillis = 30 * 60 * 1000;
 
-        // 30 minutes in milliseconds = 30 minutes * 60 seconds * 1000 milliseconds
-        return new Date().getTime() < startTime + 30 * 60 * 1000;
+        boolean expired = now.getTime() >= startTime.getTime() + thirtyMinutesMillis;
+        if(expired)
+            System.out.println("Dumping Session due to it being 30 minutes since last activity.");
+        return !expired;
     }
 
     public Connection disconnect() {

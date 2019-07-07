@@ -20,6 +20,7 @@ public class WebServer
       String host = args[0];
       String username = args[1];
       String password = args[2];
+      System.out.println("Trusting all certificates."); // @todo be able to preconfigure ssl certs from the esxi host.
       TrustAll.trust();
       SimpleClient simpleClient = new SimpleClient();
       simpleClient.setHostConnection(true);
@@ -28,9 +29,11 @@ public class WebServer
       basicConnection.setUsername(username);
       basicConnection.setPassword(password);
       simpleClient.setConnection(basicConnection);
+
+
       System.out.println("Constructing wsdl, this may take a while..");
       simpleClient.connect();
-      System.out.println("Webserver starting.");
+      System.out.println("Webserver starting on http://localhost:4567");
       get("/acquireTicket", (req, res) -> {
           try {
               return simpleClient.main();
@@ -42,6 +45,5 @@ public class WebServer
           return "Printed Inventory";
       });
 
-      simpleClient.disconnect();
   }
 }
