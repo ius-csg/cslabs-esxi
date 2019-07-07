@@ -31,7 +31,7 @@ public class WebServer
       System.out.println("Constructing wsdl, this may take a while..");
       simpleClient.connect();
       System.out.println("Webserver starting.");
-      get("/acquireToken", (req, res) -> {
+      get("/acquireTicket", (req, res) -> {
           try {
               return simpleClient.main();
           } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {

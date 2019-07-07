@@ -32,3 +32,11 @@ Run it using the following template:
 ```bash
 java -jar cslabs-esxi-all-1.0-SNAPSHOT.jar [host] [username] [password]
 ```
+
+The webserver will start on `http://localhost:4567`.
+
+Get VM console tickets by navigating to:
+
+```
+http://localhost:4567/acquireTicket
+```
