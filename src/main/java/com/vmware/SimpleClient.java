@@ -13,10 +13,16 @@
 package com.vmware;
 
 import com.vmware.connection.ConnectedVimServiceBase;
+import com.vmware.conrete.DataCenter;
+import com.vmware.conrete.Folder;
+import com.vmware.conrete.RootFolder;
+import com.vmware.conrete.VirtualMachine;
 import com.vmware.vim25.*;
+import org.ius.csg.cslabs.esxi.VmNotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -81,149 +87,118 @@ public class SimpleClient extends ConnectedVimServiceBase
         return listobjcontent;
     }
 
-    String getAndPrintInventoryContents() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg
+    TraversalSpec makeTraverselSpec(String name, String type, String path) {
+        TraversalSpec traversalSpec = new TraversalSpec();
+        traversalSpec.setName(name);
+        traversalSpec.setType(type);
+        traversalSpec.setPath(path);
+        traversalSpec.setSkip(Boolean.FALSE);
+        return traversalSpec;
+    }
+
+    private TraversalSpec makeTraverselSpec(String name, String type, String path, String selectionName) {
+        TraversalSpec traversalSpec = makeTraverselSpec(name, type, path);
+        SelectionSpec selectionSpec = new SelectionSpec();
+        selectionSpec.setName(selectionName);
+        traversalSpec.getSelectSet().add(selectionSpec);
+        return traversalSpec;
+    }
+
+    private SelectionSpec makeSelectionSpec(String name) {
+        SelectionSpec selectionSpec = new SelectionSpec();
+        selectionSpec.setName(name);
+        return selectionSpec;
+    }
+
+    private List<SelectionSpec> makeSelectionSpecs() {
+        List<SelectionSpec> selectionSpecs = new ArrayList<SelectionSpec>();
+        selectionSpecs.add(makeSelectionSpec("folderTraversalSpec"));
+//        selectionSpecs.add(makeTraverselSpec("datacenterHostTraversalSpec", "Datacenter", "hostFolder", "folderTraversalSpec"));
+        selectionSpecs.add(makeTraverselSpec("datacenterVmTraversalSpec", "Datacenter", "vmFolder", "folderTraversalSpec"));
+//        selectionSpecs.add(makeTraverselSpec("computeResourceRpTraversalSpec", "ComputeResource", "resourcePool", "resourcePoolTraversalSpec"));
+//        selectionSpecs.add(makeTraverselSpec("computeResourceHostTraversalSpec", "ComputeResource", "host"));
+//        selectionSpecs.add(makeTraverselSpec("resourcePoolTraversalSpec", "ResourcePool", "resourcePool", "resourcePoolTraversalSpec"));
+        return selectionSpecs;
+    }
+
+    RootFolder downloadObjects() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg
     {
-        TraversalSpec resourcePoolTraversalSpec = new TraversalSpec();
-        resourcePoolTraversalSpec.setName("resourcePoolTraversalSpec");
-        resourcePoolTraversalSpec.setType("ResourcePool");
-        resourcePoolTraversalSpec.setPath("resourcePool");
-        resourcePoolTraversalSpec.setSkip(Boolean.FALSE);
-        SelectionSpec rpts = new SelectionSpec();
-        rpts.setName("resourcePoolTraversalSpec");
-        resourcePoolTraversalSpec.getSelectSet().add(rpts);
-
-        TraversalSpec computeResourceRpTraversalSpec = new TraversalSpec();
-        computeResourceRpTraversalSpec.setName("computeResourceRpTraversalSpec");
-        computeResourceRpTraversalSpec.setType("ComputeResource");
-        computeResourceRpTraversalSpec.setPath("resourcePool");
-        computeResourceRpTraversalSpec.setSkip(Boolean.FALSE);
-        SelectionSpec rptss = new SelectionSpec();
-        rptss.setName("resourcePoolTraversalSpec");
-        computeResourceRpTraversalSpec.getSelectSet().add(rptss);
-
-        TraversalSpec computeResourceHostTraversalSpec = new TraversalSpec();
-        computeResourceHostTraversalSpec
-                .setName("computeResourceHostTraversalSpec");
-        computeResourceHostTraversalSpec.setType("ComputeResource");
-        computeResourceHostTraversalSpec.setPath("host");
-        computeResourceHostTraversalSpec.setSkip(Boolean.FALSE);
-
-        TraversalSpec datacenterHostTraversalSpec = new TraversalSpec();
-        datacenterHostTraversalSpec.setName("datacenterHostTraversalSpec");
-        datacenterHostTraversalSpec.setType("Datacenter");
-        datacenterHostTraversalSpec.setPath("hostFolder");
-        datacenterHostTraversalSpec.setSkip(Boolean.FALSE);
-        SelectionSpec ftspec = new SelectionSpec();
-        ftspec.setName("folderTraversalSpec");
-        datacenterHostTraversalSpec.getSelectSet().add(ftspec);
-
-        TraversalSpec datacenterVmTraversalSpec = new TraversalSpec();
-        datacenterVmTraversalSpec.setName("datacenterVmTraversalSpec");
-        datacenterVmTraversalSpec.setType("Datacenter");
-        datacenterVmTraversalSpec.setPath("vmFolder");
-        datacenterVmTraversalSpec.setSkip(Boolean.FALSE);
-        SelectionSpec ftspecs = new SelectionSpec();
-        ftspecs.setName("folderTraversalSpec");
-        datacenterVmTraversalSpec.getSelectSet().add(ftspecs);
-
-        TraversalSpec folderTraversalSpec = new TraversalSpec();
-        folderTraversalSpec.setName("folderTraversalSpec");
-        folderTraversalSpec.setType("Folder");
-        folderTraversalSpec.setPath("childEntity");
-        folderTraversalSpec.setSkip(Boolean.FALSE);
-        SelectionSpec ftrspec = new SelectionSpec();
-        ftrspec.setName("folderTraversalSpec");
-        List<SelectionSpec> ssarray = new ArrayList<SelectionSpec>();
-        ssarray.add(ftrspec);
-        ssarray.add(datacenterHostTraversalSpec);
-        ssarray.add(datacenterVmTraversalSpec);
-        ssarray.add(computeResourceRpTraversalSpec);
-        ssarray.add(computeResourceHostTraversalSpec);
-        ssarray.add(resourcePoolTraversalSpec);
-
-        folderTraversalSpec.getSelectSet().addAll(ssarray);
+        List<SelectionSpec> selectionSpecs = makeSelectionSpecs();
+        TraversalSpec folderTraversalSpec = makeTraverselSpec("folderTraversalSpec", "Folder", "childEntity");
+        folderTraversalSpec.getSelectSet().addAll(selectionSpecs);
         PropertySpec props = new PropertySpec();
         props.setAll(Boolean.FALSE);
         props.getPathSet().add("name");
         props.setType("ManagedEntity");
-        List<PropertySpec> propspecary = new ArrayList<PropertySpec>();
+        List<PropertySpec> propspecary = new ArrayList<>();
         propspecary.add(props);
 
-        PropertyFilterSpec spec = new PropertyFilterSpec();
-        spec.getPropSet().addAll(propspecary);
+        PropertyFilterSpec propertyFilterSpec = new PropertyFilterSpec();
+        propertyFilterSpec.getPropSet().addAll(propspecary);
 
-        spec.getObjectSet().add(new ObjectSpec());
-        spec.getObjectSet().get(0).setObj(rootRef);
-        spec.getObjectSet().get(0).setSkip(Boolean.FALSE);
-        spec.getObjectSet().get(0).getSelectSet().add(folderTraversalSpec);
+        propertyFilterSpec.getObjectSet().add(new ObjectSpec());
+        propertyFilterSpec.getObjectSet().get(0).setObj(rootRef);
+        propertyFilterSpec.getObjectSet().get(0).setSkip(Boolean.FALSE);
+        propertyFilterSpec.getObjectSet().get(0).getSelectSet().add(folderTraversalSpec);
 
         List<PropertyFilterSpec> listpfs = new ArrayList<PropertyFilterSpec>(1);
-        listpfs.add(spec);
+        listpfs.add(propertyFilterSpec);
         List<ObjectContent> listobjcont = retrievePropertiesAllObjects(listpfs);
+        return buildObjectTree(listobjcont);
+    }
 
-        // If we get contents back. print them out.
-        if (listobjcont != null) {
-            ObjectContent oc = null;
-            ManagedObjectReference mor = null;
-            DynamicProperty pc = null;
-            for (int oci = 0; oci < listobjcont.size(); oci++) {
-                oc = listobjcont.get(oci);
-                mor = oc.getObj();
+    public ArrayList<VirtualMachine> getVms() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg, InvalidStateFaultMsg
+    {
+        refreshSession();
+        RootFolder rootFolder = downloadObjects();
+        return rootFolder.getDataCenter().VMs.children;
+    }
 
-                List<DynamicProperty> listdp = oc.getPropSet();
-                System.out.println("Object Type : " + mor.getType());
-                System.out.println("Reference Value : " + mor.getValue());
+    public String acquireTicket(VirtualMachine vm) throws RuntimeFaultFaultMsg, InvalidStateFaultMsg
+    {
+        refreshSession();
+        return vm.acquireTicket(vimPort);
+    }
 
-                if (listdp != null) {
-                    for (int pci = 0; pci < listdp.size(); pci++) {
-                        pc = listdp.get(pci);
-                        if(pc.getVal().equals("shamethethrones.com")) {
-                          System.out.println("Getting Ticket");
-                          String ticket = null;
-                          try {
-                            ticket = vimPort.acquireTicket(mor, "webmks").getTicket();
-                            return ticket;
-                          } catch (InvalidStateFaultMsg invalidStateFaultMsg) {
-                            System.out.println("ERR: " + invalidStateFaultMsg.getMessage());
-                          }
-                          System.out.println(ticket);
-                        }
-                        System.out.println("   Property Name : " + pc.getName());
-                        if (pc != null) {
-                            if (!pc.getVal().getClass().isArray()) {
-                                System.out.println("   Property Value : " + pc.getVal());
-                            } else {
-                                List<Object> ipcary = new ArrayList<Object>();
-                                ipcary.add(pc.getVal());
-                                System.out.println("Val : " + pc.getVal());
-                                for (int ii = 0; ii < ipcary.size(); ii++) {
-                                    Object oval = ipcary.get(ii);
-                                    if (oval.getClass().getName().indexOf("ManagedObjectReference") >= 0) {
-                                        ManagedObjectReference imor =
-                                                (ManagedObjectReference) oval;
 
-                                        System.out.println("Inner Object Type : " + imor.getType());
-                                        System.out.println("Inner Reference Value : " + imor.getValue());
-                                    } else {
-                                        System.out.println("Inner Property Value : " + oval);
-                                    }
-                                }
-                            }
-                        }
+
+    public RootFolder buildObjectTree(List<ObjectContent> listobjcont) {
+        if (listobjcont == null) {
+           return null;
+        }
+
+        RootFolder root = new RootFolder();
+
+        for (int oci = 0; oci < listobjcont.size(); oci++) {
+            ObjectContent objectContent = listobjcont.get(oci);
+            ManagedObjectReference managedObjectReference = objectContent.getObj();
+            switch(managedObjectReference.getValue()) {
+                case "ha-folder-root":
+                    root.inflateFromReference(objectContent);
+                    break;
+                case "ha-datacenter":
+                    root.children.add(new DataCenter(objectContent));
+                    break;
+                case "ha-folder-vm":
+                    root.getDataCenter().VMs = new Folder<>(objectContent);
+                    break;
+                default: {
+                    if(managedObjectReference.getType().equals("VirtualMachine")) {
+                        root.getDataCenter().VMs.children.add(new VirtualMachine(objectContent));
                     }
                 }
             }
-        } else {
-            System.out.println("No Managed Entities retrieved!");
         }
-        return "";
+
+        return root;
     }
 
 
-    public String main() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg
-    {
+
+
+    public void refreshSession() {
         connection.connect();
         propCollectorRef = serviceContent.getPropertyCollector();
-        return getAndPrintInventoryContents();
     }
+
 }

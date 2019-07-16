@@ -3,12 +3,19 @@ package org.ius.csg.cslabs.esxi;
 import com.vmware.common.ssl.TrustAll;
 import com.vmware.connection.BasicConnection;
 import com.vmware.SimpleClient;
+import com.vmware.conrete.VirtualMachine;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
+import org.ius.csg.cslabs.esxi.responses.ErrorResponse;
 
+import java.io.PrintStream;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Optional;
+
 import static spark.Spark.*;
+import static org.ius.csg.cslabs.esxi.JsonUtil.*;
 
 public class WebServer
 {
@@ -34,15 +41,33 @@ public class WebServer
       System.out.println("Constructing wsdl, this may take a while..");
       simpleClient.connect();
       System.out.println("Webserver starting on http://localhost:4567");
+
       get("/acquireTicket", (req, res) -> {
-          try {
-              return simpleClient.main();
-          } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
-              runtimeFaultFaultMsg.printStackTrace();
-          } catch (InvalidPropertyFaultMsg invalidPropertyFaultMsg) {
-              invalidPropertyFaultMsg.printStackTrace();
+          res.type("application/json");
+          if(!req.queryParams().contains("name")) {
+              res.status(400);
+              return new ErrorResponse("The name parameter is required");
           }
-          return "Printed Inventory";
+          String name = req.queryParams("name");
+          Optional<VirtualMachine> targetVirtualMachine = simpleClient.getVms().stream().filter(vm -> vm.name.trim().equals(name.trim())).findFirst();
+          if(!targetVirtualMachine.isPresent()) {
+              res.status(400);
+              return new ErrorResponse("VM " + name + " not found");
+          }
+
+
+          return simpleClient.acquireTicket(targetVirtualMachine.get());
+      }, json());
+
+
+      get("/vms", (req, res) -> {
+          res.type("application/json");
+          ArrayList<VirtualMachine> vms =  simpleClient.getVms();
+          return vms.stream().map(vm -> vm.name).toArray();
+      }, json());
+
+      after((req, res) -> {
+          res.type("application/json");
       });
 
   }
