@@ -46,7 +46,7 @@ import java.util.Optional;
 public class SimpleClient extends ConnectedVimServiceBase
 {
 
-    private ManagedObjectReference propCollectorRef;
+
 
     /**
      * Uses the new RetrievePropertiesEx method to emulate the now deprecated
@@ -62,7 +62,7 @@ public class SimpleClient extends ConnectedVimServiceBase
         RetrieveOptions propObjectRetrieveOpts = new RetrieveOptions();
 
         List<ObjectContent> listobjcontent = new ArrayList<ObjectContent>();
-
+        ManagedObjectReference propCollectorRef = serviceContent.getPropertyCollector();
         RetrieveResult rslts = vimPort.retrievePropertiesEx(propCollectorRef, listpfs, propObjectRetrieveOpts);
         if (rslts != null && rslts.getObjects() != null
                 && !rslts.getObjects().isEmpty()) {
