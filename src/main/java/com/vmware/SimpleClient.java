@@ -149,15 +149,17 @@ public class SimpleClient extends ConnectedVimServiceBase
 
     public ArrayList<VirtualMachine> getVms() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg, InvalidStateFaultMsg
     {
-        refreshSession();
         RootFolder rootFolder = downloadObjects();
         return rootFolder.getDataCenter().VMs.children;
     }
 
     public String acquireTicket(VirtualMachine vm) throws RuntimeFaultFaultMsg, InvalidStateFaultMsg
     {
-        refreshSession();
         return vm.acquireTicket(vimPort);
+    }
+
+    public boolean isSessionExpired() {
+        return !connection.isConnected();
     }
 
 
@@ -191,14 +193,6 @@ public class SimpleClient extends ConnectedVimServiceBase
         }
 
         return root;
-    }
-
-
-
-
-    public void refreshSession() {
-        connection.connect();
-        propCollectorRef = serviceContent.getPropertyCollector();
     }
 
 }

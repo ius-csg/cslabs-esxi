@@ -54,19 +54,6 @@ public abstract class ConnectedVimServiceBase {
     protected WaitForValues waitForValues;
     protected GetMOREF getMOREFs;
 
-    // By default assume we are talking to a vCenter
-    Boolean hostConnection = Boolean.FALSE;
-
-
-    //basic-connection
-    //Turn off the use of SSO for connections. Useful for connecting to ESX or ESXi hosts.
-    public void setHostConnection(final Boolean value) {
-        // NOTE: the common framework will insert a "Boolean.TRUE" object on
-        // options that have parameter = false set. This indicates they
-        // are boolean flag options not string parameter options.
-        this.hostConnection = value;
-    }
-
     /**
      * Use this method to get a reference to the service instance itself.
      * <p>
@@ -95,11 +82,6 @@ public abstract class ConnectedVimServiceBase {
      */
     public Connection connect() {
 
-        if(hostConnection) {
-            // construct a BasicConnection object to use for
-            connection = basicConnectionFromConnection(connection);
-        }
-
         try {
             connection.connect();
             this.waitForValues = new WaitForValues(connection);
@@ -116,14 +98,6 @@ public abstract class ConnectedVimServiceBase {
             System.err.println("No valid connection available. Exiting now.");
             System.exit(0);
         }
-        return connection;
-    }
-
-    public BasicConnection basicConnectionFromConnection(final Connection original) {
-        BasicConnection connection = new BasicConnection();
-        connection.setUrl(original.getUrl());
-        connection.setUsername(original.getUsername());
-        connection.setPassword(original.getPassword());
         return connection;
     }
 
