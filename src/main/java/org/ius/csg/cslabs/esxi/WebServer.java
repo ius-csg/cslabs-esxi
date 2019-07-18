@@ -5,6 +5,7 @@ import com.vmware.common.ssl.TrustAll;
 import com.vmware.connection.BasicConnection;
 import com.vmware.SimpleClient;
 import com.vmware.conrete.VirtualMachine;
+import com.vmware.vim25.VirtualMachinePowerState;
 import org.ius.csg.cslabs.esxi.responses.ErrorResponse;
 
 import java.security.KeyManagementException;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static spark.Spark.*;
-import static org.ius.csg.cslabs.esxi.JsonUtil.*;
+import static org.ius.csg.cslabs.esxi.json.JsonUtil.*;
 
 public class WebServer
 {
@@ -24,6 +25,7 @@ public class WebServer
     {
         if (simpleClient != null) {
             if (simpleClient.isSessionExpired()) {
+                System.out.println("Dumping Session due to it being 30 minutes since last activity.");
                 simpleClient.disconnect();
                 simpleClient = makeSimpleClient();
             }
@@ -78,6 +80,10 @@ public class WebServer
                 res.status(400);
                 return new ErrorResponse("VM " + name + " not found");
             }
+            if(targetVirtualMachine.get().powerState != VirtualMachinePowerState.POWERED_ON) {
+                res.status(400);
+                return new ErrorResponse("VM must be turned on!");
+            }
             return simpleClient.acquireTicket(targetVirtualMachine.get());
         }, json());
 
@@ -86,7 +92,7 @@ public class WebServer
             res.type("application/json");
             refreshSession();
             ArrayList<VirtualMachine> vms = simpleClient.getVms();
-            return vms.stream().map(vm -> vm.name).toArray();
+            return vms;
         }, json());
     }
 }

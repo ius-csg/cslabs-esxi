@@ -1,19 +1,23 @@
 package com.vmware.conrete;
 
+import com.vmware.AssignFunction;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 
 import java.util.List;
+import static com.vmware.PropertyUtility.*;
 
 public class SimplifiedManagedObject
 {
 
-    public SimplifiedManagedObject() {
+    public SimplifiedManagedObject()
+    {
 
     }
 
-    public SimplifiedManagedObject(ObjectContent objectContent) {
+    public SimplifiedManagedObject(ObjectContent objectContent)
+    {
         this.inflateFromReference(objectContent);
     }
 
@@ -21,33 +25,34 @@ public class SimplifiedManagedObject
 
     public String objectType = "";
 
-    public String reference() {
-        if(managedObjectReference == null)
+    public String reference()
+    {
+        if (managedObjectReference == null)
             return "";
         return managedObjectReference.getValue();
     }
+
     public ManagedObjectReference managedObjectReference;
 
     public ObjectContent objectContent;
 
-    public void inflateFromReference(ObjectContent objectContent)
-    {
+
+    protected void inflateFromReference(ObjectContent objectContent, AssignFunction assignFunction) {
         this.objectContent = objectContent;
         managedObjectReference = objectContent.getObj();
         objectType = managedObjectReference.getType();
 
-        List<DynamicProperty> listdp = objectContent.getPropSet();
-        if (listdp != null) {
-            if(listdp.size() == 1) {
-                DynamicProperty dynamicProperty = listdp.get(0);
-                if (dynamicProperty != null && dynamicProperty.getName().equals("name")) {
-                    if (!dynamicProperty.getVal().getClass().isArray()) {
-                        name = (String)dynamicProperty.getVal();
-                    }
-                }
-            }
+        assign((name, property) -> {
+            if(name.equals("name"))
+                this.name = (String)property.getVal();
+            if(assignFunction != null)
+                assignFunction.assign(name, property);
+        }, objectContent);
+    }
 
-        }
+    public void inflateFromReference(ObjectContent objectContent)
+    {
+        inflateFromReference(objectContent, null);
     }
 
 

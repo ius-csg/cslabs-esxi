@@ -122,6 +122,7 @@ public class BasicConnection implements Connection
 
     public Connection connect() {
         if (!isConnected()) {
+
             try {
                 _connect();
             } catch (Exception e) {
@@ -161,8 +162,6 @@ public class BasicConnection implements Connection
         Date now = new Date();
         long thirtyMinutesMillis = 30 * 60 * 1000;
         boolean expired = now.getTime() >= startTime.getTime() + thirtyMinutesMillis;
-        if(expired)
-            System.out.println("Dumping Session due to it being 30 minutes since last activity.");
         return !expired;
     }
 

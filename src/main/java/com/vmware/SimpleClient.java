@@ -87,54 +87,50 @@ public class SimpleClient extends ConnectedVimServiceBase
         return listobjcontent;
     }
 
-    TraversalSpec makeTraverselSpec(String name, String type, String path) {
-        TraversalSpec traversalSpec = new TraversalSpec();
-        traversalSpec.setName(name);
-        traversalSpec.setType(type);
-        traversalSpec.setPath(path);
-        traversalSpec.setSkip(Boolean.FALSE);
-        return traversalSpec;
-    }
 
-    private TraversalSpec makeTraverselSpec(String name, String type, String path, String selectionName) {
-        TraversalSpec traversalSpec = makeTraverselSpec(name, type, path);
-        SelectionSpec selectionSpec = new SelectionSpec();
-        selectionSpec.setName(selectionName);
-        traversalSpec.getSelectSet().add(selectionSpec);
-        return traversalSpec;
-    }
 
-    private SelectionSpec makeSelectionSpec(String name) {
-        SelectionSpec selectionSpec = new SelectionSpec();
-        selectionSpec.setName(name);
-        return selectionSpec;
-    }
-
-    private List<SelectionSpec> makeSelectionSpecs() {
-        List<SelectionSpec> selectionSpecs = new ArrayList<SelectionSpec>();
-        selectionSpecs.add(makeSelectionSpec("folderTraversalSpec"));
-//        selectionSpecs.add(makeTraverselSpec("datacenterHostTraversalSpec", "Datacenter", "hostFolder", "folderTraversalSpec"));
-        selectionSpecs.add(makeTraverselSpec("datacenterVmTraversalSpec", "Datacenter", "vmFolder", "folderTraversalSpec"));
-//        selectionSpecs.add(makeTraverselSpec("computeResourceRpTraversalSpec", "ComputeResource", "resourcePool", "resourcePoolTraversalSpec"));
-//        selectionSpecs.add(makeTraverselSpec("computeResourceHostTraversalSpec", "ComputeResource", "host"));
-//        selectionSpecs.add(makeTraverselSpec("resourcePoolTraversalSpec", "ResourcePool", "resourcePool", "resourcePoolTraversalSpec"));
-        return selectionSpecs;
-    }
 
     RootFolder downloadObjects() throws RuntimeFaultFaultMsg, InvalidPropertyFaultMsg
     {
-        List<SelectionSpec> selectionSpecs = makeSelectionSpecs();
-        TraversalSpec folderTraversalSpec = makeTraverselSpec("folderTraversalSpec", "Folder", "childEntity");
-        folderTraversalSpec.getSelectSet().addAll(selectionSpecs);
+        TraversalSpec traversalSpec = new TraversalSpec();
+        traversalSpec.setName("datacenterVmTraversalSpec"); // this name does not matter
+        traversalSpec.setType("Datacenter");
+        traversalSpec.setPath("vmFolder");
+        traversalSpec.setSkip(Boolean.FALSE);
+        SelectionSpec selectionSpec = new SelectionSpec();
+        selectionSpec.setName("folderTraversalSpec");
+        traversalSpec.getSelectSet().add(selectionSpec);
+
+
+
+//        TraversalSpec VmSummaryTraversalSpec = new TraversalSpec();
+//        VmSummaryTraversalSpec.setName("VmSummaryTraversalSpec");
+//        VmSummaryTraversalSpec.setType("VirtualMachine");
+//        VmSummaryTraversalSpec.setPath("summary");
+//        VmSummaryTraversalSpec.setSkip(Boolean.FALSE);
+//        traversalSpec.getSelectSet().add(VmSummaryTraversalSpec);
+
+        TraversalSpec folderTraversalSpec = new TraversalSpec();
+        folderTraversalSpec.setName("folderTraversalSpec"); // these name does matter since it is being referenced
+        folderTraversalSpec.setType("Folder");
+        folderTraversalSpec.setPath("childEntity");
+        folderTraversalSpec.setSkip(Boolean.FALSE);
+        folderTraversalSpec.getSelectSet().add(traversalSpec);
+
         PropertySpec props = new PropertySpec();
         props.setAll(Boolean.FALSE);
         props.getPathSet().add("name");
         props.setType("ManagedEntity");
-        List<PropertySpec> propspecary = new ArrayList<>();
-        propspecary.add(props);
 
         PropertyFilterSpec propertyFilterSpec = new PropertyFilterSpec();
-        propertyFilterSpec.getPropSet().addAll(propspecary);
+        propertyFilterSpec.getPropSet().add(props);
+
+        PropertySpec vmProps = new PropertySpec();
+        vmProps.setAll(Boolean.FALSE);
+        vmProps.getPathSet().add("summary.runtime.powerState");
+        vmProps.setType("VirtualMachine");
+        propertyFilterSpec.getPropSet().add(vmProps);
+
 
         propertyFilterSpec.getObjectSet().add(new ObjectSpec());
         propertyFilterSpec.getObjectSet().get(0).setObj(rootRef);
