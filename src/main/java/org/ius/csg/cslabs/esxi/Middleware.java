@@ -16,7 +16,12 @@ public class Middleware
             return "OK";
         });
 
-        before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
+        before((request, response) -> {
+            response.header("Access-Control-Allow-Origin", "*");
+            response.header("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.header("Pragma", "no-cache");
+            response.header("Expires", "0");
+        });
         after((req, res) -> res.type("application/json"));
     }
 }
