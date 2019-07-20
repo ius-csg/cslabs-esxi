@@ -1,0 +1,9 @@
+version: "2"
+services:
+  websocketproxy:
+    container_name: websocketproxy
+    restart: always
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"

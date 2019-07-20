@@ -40,3 +40,25 @@ Get VM console tickets by navigating to:
 ```
 http://localhost:4567/acquireTicket
 ```
+
+
+## Starting the websocket server
+
+This part requires [docker](https://www.docker.com/) or an ngninx server
+
+Replace `esxi.home.local` in teh nginx.conf and replace it with the esxi server that you will be using.
+
+Run the following to start the nginx proxy.
+```
+docker-compose up
+```
+
+Add the `server.crt` and the `rootCA.crt` to Trusted Root authorities on windows so the browser will trust it.
+
+Add the following to your host file.
+
+```
+127.0.0.1  websocket.home.local
+```
+
+If you point the frontend to that domain name it should proxy the connection.
